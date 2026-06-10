@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  huaixianggu-app:
+    build: .
+    ports:
+      - "8080:80"
+    container_name: huaixianggu-honey-analyzer
+    restart: unless-stopped
