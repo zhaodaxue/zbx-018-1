@@ -61,7 +61,11 @@ export function UploadArea() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      handleFile(file);
+      if (file.name.endsWith('.csv')) {
+        handleFile(file);
+      } else {
+        setUploadError('请上传 CSV 格式的文件');
+      }
     }
   };
 

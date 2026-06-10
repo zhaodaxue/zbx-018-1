@@ -24,6 +24,11 @@ export function QuantileTable() {
     '杂花': 'bg-honey-50',
   };
 
+  const indicators = [
+    { key: 'acidity', label: '酸度', unit: 'mmol/kg' },
+    { key: 'moisture', label: '含水量', unit: '%' },
+  ] as const;
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-honey-100 p-6">
       <div className="flex items-center gap-2 mb-4">
@@ -35,16 +40,29 @@ export function QuantileTable() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b-2 border-honey-200">
-              <th className="py-3 px-4 text-left font-medium text-gray-500">指标</th>
+              <th className="py-3 px-4 text-left font-medium text-gray-500" rowSpan={2}>指标</th>
               {validGroups.map(g => (
                 <th
                   key={g.source}
-                  className={`py-3 px-4 text-center font-medium ${sourceColors[g.source]} rounded-t-lg`}
+                  colSpan={2}
+                  className={`py-3 px-4 text-center font-medium ${sourceColors[g.source]}`}
                 >
                   <div className="text-forest-700">{g.source}蜜</div>
                   <div className="text-xs text-gray-400 font-normal">{g.count} 批</div>
                 </th>
               ))}
+            </tr>
+            <tr className="border-b border-honey-100">
+              {validGroups.flatMap(g =>
+                indicators.map(ind => (
+                  <th
+                    key={`${g.source}-${ind.key}`}
+                    className="py-2 px-4 text-center font-medium text-gray-500 text-xs"
+                  >
+                    {ind.label} ({ind.unit})
+                  </th>
+                ))
+              )}
             </tr>
           </thead>
           <tbody>
@@ -56,15 +74,17 @@ export function QuantileTable() {
                 <td className="py-2.5 px-4 text-gray-600 font-medium">
                   {row.label}
                 </td>
-                {validGroups.map(g => {
-                  const stats = g.acidityStats;
-                  const value = (stats as unknown as Record<string, number>)[row.key];
-                  return (
-                    <td key={g.source} className="py-2.5 px-4 text-center text-gray-700">
-                      {typeof value === 'number' ? value.toFixed(2) : '-'}
-                    </td>
-                  );
-                })}
+                {validGroups.flatMap(g =>
+                  indicators.map(ind => {
+                    const stats = ind.key === 'acidity' ? g.acidityStats : g.moistureStats;
+                    const value = (stats as unknown as Record<string, number>)[row.key];
+                    return (
+                      <td key={`${g.source}-${ind.key}`} className="py-2.5 px-4 text-center text-gray-700">
+                        {typeof value === 'number' ? value.toFixed(2) : '-'}
+                      </td>
+                    );
+                  })
+                )}
               </tr>
             ))}
           </tbody>

@@ -88,9 +88,10 @@ export function filterBatches(batches: HoneyBatch[], filter: FilterState): Honey
       const batchMonth = batch.harvestDate.getMonth() + 1;
       if (batchMonth > filter.endMonth) return false;
     }
-    if (filter.selectedSources.length > 0) {
-      if (!filter.selectedSources.includes(batch.nectarSource)) return false;
+    if (filter.selectedSources.length === 0) {
+      return false;
     }
+    if (!filter.selectedSources.includes(batch.nectarSource)) return false;
     return true;
   });
 }

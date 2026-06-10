@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useDataStore } from '../store/useDataStore';
 import { HoneyBatch } from '../data/types';
@@ -8,6 +8,10 @@ const PAGE_SIZE = 10;
 export function BatchTable() {
   const { filteredBatches, hasData } = useDataStore();
   const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filteredBatches.length]);
 
   if (!hasData) return null;
 
