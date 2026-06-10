@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { useDataStore } from '../store/useDataStore';
-import { QuantileStats, NectarSource } from '../data/types';
+import { QuantileStats, NectarSource, OutlierItem } from '../data/types';
 
 interface BoxPlotChartProps {
   metric: 'acidity' | 'moisture';
@@ -15,7 +16,8 @@ const COLORS: Record<NectarSource, { fill: string; stroke: string }> = {
 };
 
 export function BoxPlotChart({ metric, title, unit, threshold }: BoxPlotChartProps) {
-  const { groupStats, hasData } = useDataStore();
+  const { groupStats, hasData, setFocusedBatch, isFocusMode } = useDataStore();
+  const [hoveredOutlier, setHoveredOutlier] = useState<{ item: OutlierItem; x: number; y: number } | null>(null);
 
   if (!hasData) return null;
 
@@ -59,8 +61,14 @@ export function BoxPlotChart({ metric, title, unit, threshold }: BoxPlotChartPro
     chartMin + (range * i) / yTicks
   );
 
+  const handleOutlierClick = (batchId: string) => {
+    if (!isFocusMode) {
+      setFocusedBatch(batchId);
+    }
+  };
+
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-honey-100 p-6">
+    <div className="bg-white rounded-2xl shadow-sm border border-honey-100 p-6 relative">
       <h3 className="font-serif font-bold text-forest-700 text-lg mb-2">{title}</h3>
       <p className="text-gray-400 text-sm mb-4">单位：{unit}</p>
 
@@ -129,6 +137,8 @@ export function BoxPlotChart({ metric, title, unit, threshold }: BoxPlotChartPro
           const boxX = centerX - boxWidth / 2;
           const boxH = Math.abs(q3Y - q1Y) || 2;
 
+          const outlierItems: OutlierItem[] = stats.outlierItems || [];
+
           return (
             <g key={group.source}>
               <line
@@ -176,16 +186,25 @@ export function BoxPlotChart({ metric, title, unit, threshold }: BoxPlotChartPro
                 strokeWidth="2.5"
               />
 
-              {stats.outliers.map((outlier, oi) => (
-                <circle
-                  key={oi}
-                  cx={centerX}
-                  cy={yScale(outlier)}
-                  r="4"
-                  fill="#B91C1C"
-                  opacity="0.8"
-                />
-              ))}
+              {outlierItems.map((item, oi) => {
+                const cy = yScale(item.value);
+                return (
+                  <g key={oi}>
+                    <circle
+                      cx={centerX}
+                      cy={cy}
+                      r="4"
+                      fill="#B91C1C"
+                      opacity="0.8"
+                      className="cursor-pointer transition-all hover:r-6"
+                      onMouseEnter={() => setHoveredOutlier({ item, x: centerX, y: cy })}
+                      onMouseLeave={() => setHoveredOutlier(null)}
+                      onClick={() => handleOutlierClick(item.batchId)}
+                      style={{ cursor: 'pointer' }}
+                    />
+                  </g>
+                );
+              })}
 
               <text
                 x={centerX}
@@ -219,6 +238,23 @@ export function BoxPlotChart({ metric, title, unit, threshold }: BoxPlotChartPro
           {unit}
         </text>
       </svg>
+
+      {hoveredOutlier && (
+        <div
+          className="absolute z-20 pointer-events-none bg-gray-800 text-white text-xs px-3 py-2 rounded-lg shadow-xl"
+          style={{
+            left: `${(hoveredOutlier.x / width) * 100}%`,
+            top: `${(hoveredOutlier.y / height) * 100 + 8}%`,
+            transform: 'translateX(-50%)',
+          }}
+        >
+          <div className="font-medium">{hoveredOutlier.item.batchId}</div>
+          <div className="text-gray-300">
+            实测值：{hoveredOutlier.item.value.toFixed(2)} {unit}
+          </div>
+          <div className="text-gray-400 text-[10px] mt-1">点击聚焦</div>
+        </div>
+      )}
     </div>
   );
 }

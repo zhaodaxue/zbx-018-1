@@ -3,14 +3,15 @@ import { useDataStore } from '../store/useDataStore';
 import { exportToCsv, downloadCsv } from '../data/csvParser';
 
 export function ExportButton() {
-  const { filteredBatches, hasData } = useDataStore();
+  const { visibleBatches, hasData, isFocusMode } = useDataStore();
 
   if (!hasData) return null;
 
   const handleExport = () => {
-    const csvContent = exportToCsv(filteredBatches);
+    const csvContent = exportToCsv(visibleBatches);
     const timestamp = new Date().toISOString().slice(0, 10);
-    downloadCsv(csvContent, `槐香谷批次分析_${timestamp}.csv`);
+    const suffix = isFocusMode ? '_聚焦' : '';
+    downloadCsv(csvContent, `槐香谷批次分析${suffix}_${timestamp}.csv`);
   };
 
   return (

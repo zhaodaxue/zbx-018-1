@@ -3,7 +3,7 @@ import { NectarSource } from '../data/types';
 import { BarChart3 } from 'lucide-react';
 
 export function QuantileTable() {
-  const { groupStats, hasData } = useDataStore();
+  const { groupStats, hasData, isFocusMode } = useDataStore();
 
   if (!hasData) return null;
 
@@ -29,11 +29,38 @@ export function QuantileTable() {
     { key: 'moisture', label: '含水量', unit: '%' },
   ] as const;
 
+  if (validGroups.length === 0) {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-honey-100 p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <BarChart3 className="w-5 h-5 text-honey-600" />
+          <h3 className="font-serif font-bold text-forest-700 text-lg">分位数统计表</h3>
+          {isFocusMode && (
+            <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">
+              聚焦模式
+            </span>
+          )}
+        </div>
+        <div className="py-12 text-center">
+          <p className="text-gray-400">当前筛选条件下无统计数据</p>
+          {isFocusMode && (
+            <p className="text-sm text-gray-300 mt-1">聚焦模式下无关联批次</p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-honey-100 p-6">
       <div className="flex items-center gap-2 mb-4">
         <BarChart3 className="w-5 h-5 text-honey-600" />
         <h3 className="font-serif font-bold text-forest-700 text-lg">分位数统计表</h3>
+        {isFocusMode && (
+          <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">
+            聚焦模式
+          </span>
+        )}
       </div>
 
       <div className="overflow-x-auto">

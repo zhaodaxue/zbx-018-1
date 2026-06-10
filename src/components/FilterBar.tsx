@@ -1,6 +1,6 @@
 import { Calendar, Filter } from 'lucide-react';
 import { useDataStore } from '../store/useDataStore';
-import { NECTAR_SOURCES, NectarSource } from '../data/types';
+import { NECTAR_SOURCES, NectarSource, StatusFilter } from '../data/types';
 
 export function FilterBar() {
   const {
@@ -9,7 +9,9 @@ export function FilterBar() {
     setStartMonth,
     setEndMonth,
     toggleSource,
+    setStatusFilter,
     hasData,
+    isFocusMode,
   } = useDataStore();
 
   if (!hasData) return null;
@@ -67,9 +69,41 @@ export function FilterBar() {
                 <button
                   key={source}
                   onClick={() => toggleSource(source)}
-                  className={`px-4 py-2 rounded-lg border transition-all font-medium ${colorMap[source]}`}
+                  disabled={isFocusMode}
+                  className={`px-4 py-2 rounded-lg border transition-all font-medium ${colorMap[source]} ${isFocusMode ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   {source}蜜
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <span className="text-gray-600 font-medium">状态：</span>
+          <div className="flex gap-2">
+            {(['all', '可上架', '待复检'] as StatusFilter[]).map((status) => {
+              const label = status === 'all' ? '全部' : status;
+              const isActive = filter.statusFilter === status;
+              const statusColors: Record<StatusFilter, string> = {
+                'all': isActive
+                  ? 'bg-honey-100 border-honey-300 text-honey-700'
+                  : 'bg-gray-100 border-gray-200 text-gray-500 hover:bg-gray-50',
+                '可上架': isActive
+                  ? 'bg-forest-100 border-forest-300 text-forest-700'
+                  : 'bg-gray-100 border-gray-200 text-gray-500 hover:bg-gray-50',
+                '待复检': isActive
+                  ? 'bg-red-100 border-red-300 text-red-700'
+                  : 'bg-gray-100 border-gray-200 text-gray-500 hover:bg-gray-50',
+              };
+              return (
+                <button
+                  key={status}
+                  onClick={() => setStatusFilter(status)}
+                  disabled={isFocusMode}
+                  className={`px-4 py-2 rounded-lg border transition-all font-medium ${statusColors[status]} ${isFocusMode ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {label}
                 </button>
               );
             })}

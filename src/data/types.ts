@@ -2,6 +2,8 @@ export type NectarSource = '槐' | '枣' | '杂花';
 
 export type ShelfStatus = '可上架' | '待复检';
 
+export type StatusFilter = 'all' | ShelfStatus;
+
 export interface HoneyBatch {
   batchId: string;
   harvestDate: Date;
@@ -11,6 +13,11 @@ export interface HoneyBatch {
   yield: number;
   shelfStatus: ShelfStatus;
   rejectReason: string;
+}
+
+export interface OutlierItem {
+  value: number;
+  batchId: string;
 }
 
 export interface QuantileStats {
@@ -23,6 +30,7 @@ export interface QuantileStats {
   lowerFence: number;
   upperFence: number;
   outliers: number[];
+  outlierItems: OutlierItem[];
   count: number;
 }
 
@@ -40,6 +48,7 @@ export interface FilterState {
   startMonth: number | null;
   endMonth: number | null;
   selectedSources: NectarSource[];
+  statusFilter: StatusFilter;
 }
 
 export const NECTAR_SOURCES: NectarSource[] = ['槐', '枣', '杂花'];

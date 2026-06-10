@@ -1,4 +1,4 @@
-import { HoneyBatch, NectarSource, NECTAR_SOURCES, QuantileStats, GroupStats, FilterState } from '../data/types';
+import { HoneyBatch, NectarSource, NECTAR_SOURCES, QuantileStats, GroupStats, FilterState, OutlierItem } from '../data/types';
 
 function percentile(sorted: number[], p: number): number {
   if (sorted.length === 0) return 0;
@@ -11,8 +11,12 @@ function percentile(sorted: number[], p: number): number {
   return sorted[lower] * (1 - weight) + sorted[upper] * weight;
 }
 
-export function computeQuantileStats(values: number[]): QuantileStats {
-  const sorted = [...values].sort((a, b) => a - b);
+export function computeQuantileStats(batches: HoneyBatch[], metric: 'acidity' | 'moisture'): QuantileStats {
+  const values = batches.map(b => b[metric]);
+  const sortedPairs = batches
+    .map(b => ({ value: b[metric], batchId: b.batchId }))
+    .sort((a, b) => a.value - b.value);
+  const sorted = sortedPairs.map(p => p.value);
   const count = sorted.length;
 
   if (count === 0) {
@@ -26,6 +30,7 @@ export function computeQuantileStats(values: number[]): QuantileStats {
       lowerFence: 0,
       upperFence: 0,
       outliers: [],
+      outlierItems: [],
       count: 0,
     };
   }
@@ -43,7 +48,10 @@ export function computeQuantileStats(values: number[]): QuantileStats {
   const lowerFence = Math.max(lowerFenceRaw, min);
   const upperFence = Math.min(upperFenceRaw, max);
 
-  const outliers = sorted.filter(v => v < lowerFenceRaw || v > upperFenceRaw);
+  const outlierItems: OutlierItem[] = sortedPairs
+    .filter(p => p.value < lowerFenceRaw || p.value > upperFenceRaw)
+    .map(p => ({ value: p.value, batchId: p.batchId }));
+  const outliers = outlierItems.map(o => o.value);
 
   return {
     min,
@@ -55,6 +63,7 @@ export function computeQuantileStats(values: number[]): QuantileStats {
     lowerFence,
     upperFence,
     outliers,
+    outlierItems,
     count,
   };
 }
@@ -62,15 +71,13 @@ export function computeQuantileStats(values: number[]): QuantileStats {
 export function groupBySource(batches: HoneyBatch[]): GroupStats[] {
   return NECTAR_SOURCES.map(source => {
     const sourceBatches = batches.filter(b => b.nectarSource === source);
-    const acidityValues = sourceBatches.map(b => b.acidity);
-    const moistureValues = sourceBatches.map(b => b.moisture);
     const passCount = sourceBatches.filter(b => b.shelfStatus === '可上架').length;
 
     return {
       source,
       count: sourceBatches.length,
-      acidityStats: computeQuantileStats(acidityValues),
-      moistureStats: computeQuantileStats(moistureValues),
+      acidityStats: computeQuantileStats(sourceBatches, 'acidity'),
+      moistureStats: computeQuantileStats(sourceBatches, 'moisture'),
       totalYield: sourceBatches.reduce((sum, b) => sum + b.yield, 0),
       passCount,
       failCount: sourceBatches.length - passCount,
@@ -92,6 +99,9 @@ export function filterBatches(batches: HoneyBatch[], filter: FilterState): Honey
       return false;
     }
     if (!filter.selectedSources.includes(batch.nectarSource)) return false;
+    if (filter.statusFilter && filter.statusFilter !== 'all') {
+      if (batch.shelfStatus !== filter.statusFilter) return false;
+    }
     return true;
   });
 }
